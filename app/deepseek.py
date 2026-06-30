@@ -54,18 +54,21 @@ async def call_deepseek(user_text: str) -> dict:
         resp = await client.post(url, headers=headers, json=payload)
         # — 状态码判断 —
         if resp.status_code >= 500:
-            raise ValueError(f"DeepSeek 服务器错误 (HTTP {resp.status_code}): {resp.text[:300]}")
+            preview = resp.text[:300]
+            raise ValueError(f"DeepSeek 服务器错误 (HTTP {resp.status_code}): {preview}")
         if resp.status_code >= 400:
+            preview = resp.text[:300]
             raise ValueError(
-                f"DeepSeek API 认证失败或请求错误 (HTTP {resp.status_code})，请检查 DEEPSEEK_API_KEY 是否正确且余额充足"
+                f"DeepSeek API 请求错误 (HTTP {resp.status_code}): {preview}"
             )
 
         # — 解析 JSON 响应体（容错 HTML 错误页面） —
         try:
             data = resp.json()
         except json.JSONDecodeError:
+            preview = resp.text[:300]
             raise ValueError(
-                f"DeepSeek 返回非 JSON (HTTP {resp.status_code}): {resp.text[:300]}"
+                f"DeepSeek 返回非 JSON (HTTP {resp.status_code}): {preview}"
             )
 
         if "choices" not in data:

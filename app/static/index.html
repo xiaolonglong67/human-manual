@@ -467,7 +467,13 @@ async function apiAuth(endpoint, username, password) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ username, password }),
   });
-  const data = await resp.json();
+  const text = await resp.text();
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    throw new Error('服务器返回异常 (HTTP ' + resp.status + '): ' + text.slice(0, 200));
+  }
   if (!resp.ok) throw new Error(data.detail || '请求失败');
   return data;
 }
@@ -490,7 +496,13 @@ async function apiChat(message) {
     showAuth();
     throw new Error('登录已过期，请重新登录');
   }
-  const data = await resp.json();
+  const text = await resp.text();
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    throw new Error('服务器返回异常 (HTTP ' + resp.status + '): ' + text.slice(0, 200));
+  }
   if (!resp.ok) throw new Error(data.detail || '请求失败');
   return data.reply;
 }
