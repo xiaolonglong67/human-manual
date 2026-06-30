@@ -2,6 +2,9 @@
 聊天路由 — POST /api/chat  意图识别 → DeepSeek → 数据库 → 回复
 """
 
+import logging
+import traceback
+
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
 
@@ -15,6 +18,8 @@ from ..database import (
     upsert_person,
 )
 from ..deepseek import call_deepseek
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api", tags=["chat"])
 
@@ -54,6 +59,7 @@ async def chat(body: ChatRequest, user: dict = Depends(get_current_user)):
         try:
             parsed = await call_deepseek(raw)
         except Exception as e:
+            logger.error(f"DeepSeek 调用失败: {traceback.format_exc()}")
             return ChatResponse(reply=f"❌ AI 解析失败：{e}")
 
         async with get_db() as db:
