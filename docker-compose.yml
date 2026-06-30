@@ -1,3 +1,6 @@
+# Docker Compose — 人类使用说明书
+# 启动:  echo 'DEEPSEEK_API_KEY=你的Key' > .env && docker compose up -d --build
+
 services:
   app:
     build: .
