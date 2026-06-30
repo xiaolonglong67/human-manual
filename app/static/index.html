@@ -491,7 +491,6 @@ async function apiChat(message) {
     body: JSON.stringify({ message }),
   });
   if (resp.status === 401) {
-    // token 过期
     clearState();
     showAuth();
     throw new Error('登录已过期，请重新登录');
@@ -501,7 +500,9 @@ async function apiChat(message) {
   try {
     data = JSON.parse(text);
   } catch {
-    throw new Error('服务器返回异常 (HTTP ' + resp.status + '): ' + text.slice(0, 200));
+    // 后端返回未捕获异常时可能是 HTML
+    const preview = text.replace(/<[^>]+>/g, '').slice(0, 200);
+    throw new Error('服务器异常 (HTTP ' + resp.status + '): ' + preview);
   }
   if (!resp.ok) throw new Error(data.detail || '请求失败');
   return data.reply;
