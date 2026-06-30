@@ -6,7 +6,7 @@
   "gewechat_callback_url": "http://本机IP:2532/v2/api/callback",
 
   "model": "deepseek-chat",
-  "open_ai_api_key": "sk-ea29c7232fae4de4afe289918717a344",
+  "open_ai_api_key": "sk-你的DeepSeek_API_KEY",
   "open_ai_api_base": "https://api.deepseek.com",
 
   "plugin_trigger_prefix": "$"
