@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Write-Output $env:http_proxy)",
+      "PowerShell(Write-Output $env:https_proxy)",
+      "PowerShell(Write-Output $env:HTTP_PROXY)",
+      "PowerShell(Write-Output $env:HTTPS_PROXY)",
+      "PowerShell(Write-Output $env:ALL_PROXY)",
+      "PowerShell(Write-Output $env:NO_PROXY)",
+      "PowerShell([System.Net.WebProxy]::GetDefaultProxy\\(\\) | Select-Object Address)",
+      "PowerShell(railway --version 2>&1)",
+      "PowerShell(railway whoami)",
+      "PowerShell(railway login)",
+      "WebFetch(domain:docs.railway.com)",
+      "WebSearch"
+    ]
+  }
+}
