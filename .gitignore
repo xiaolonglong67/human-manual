@@ -22,3 +22,6 @@ gewe_data/
 # 操作系统
 .DS_Store
 Thumbs.db
+
+# 部署数据
+data/
