@@ -70,6 +70,7 @@ async def call_deepseek(user_text: str) -> dict:
                     raise last_error
 
                 if resp.status_code >= 400:
+                    # 4xx 不重试（Key问题/请求问题）
                     raise ValueError(
                         f"DeepSeek API 请求错误 (HTTP {resp.status_code}): {resp.text[:300]}"
                     )
@@ -98,9 +99,10 @@ async def call_deepseek(user_text: str) -> dict:
             except json.JSONDecodeError:
                 raise ValueError(f"DeepSeek 返回非 JSON: {content[:500]}")
 
-        except (ValueError, json.JSONDecodeError) as e:
-            # 非 5xx 错误不重试
-            if "HTTP 5" not in str(e) and attempt < MAX_RETRIES:
+        except ValueError as e:
+            # 仅 5xx / 返回非 JSON 时重试
+            msg = str(e)
+            if ("HTTP 5" in msg or "返回非 JSON" in msg) and attempt < MAX_RETRIES:
                 last_error = e
                 await asyncio.sleep(RETRY_DELAY_SEC)
                 continue
