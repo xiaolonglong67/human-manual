@@ -65,7 +65,7 @@ async def chat(body: ChatRequest, user: dict = Depends(get_current_user)):
         async with get_db() as db:
             is_new = await upsert_person(db, user_id, parsed)
 
-        name = parsed["name"]
+        name = parsed.get("name", "未知")
         return ChatResponse(
             reply=f"✅ 已{'创建' if is_new else '更新'}「{name}」的说明书！"
         )
