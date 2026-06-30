@@ -1,0 +1,13 @@
+{
+  "channel_type": "gewechat",
+  "gewechat_app_id": "你的Gewechat_APP_ID",
+  "gewechat_token": "你的Gewechat_Token",
+  "gewechat_base_url": "http://本机IP:2531/v2/api",
+  "gewechat_callback_url": "http://本机IP:2532/v2/api/callback",
+
+  "model": "deepseek-chat",
+  "open_ai_api_key": "sk-ea29c7232fae4de4afe289918717a344",
+  "open_ai_api_base": "https://api.deepseek.com",
+
+  "plugin_trigger_prefix": "$"
+}

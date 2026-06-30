@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>🧠 人类使用说明书</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #ededed;
+    --header-bg: #07c160;
+    --bubble-user: #95ec69;
+    --bubble-ai: #ffffff;
+    --text-primary: #111;
+    --text-secondary: #888;
+    --border: #e0e0e0;
+    --shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    background: #f0f0f0;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+  }
+
+  /* ── 手机壳 ── */
+  .app-shell {
+    width: 100%;
+    max-width: 480px;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg);
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* ── 顶部标题栏 ── */
+  .header {
+    background: var(--header-bg);
+    color: #fff;
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    z-index: 10;
+  }
+  .header .icon { font-size: 24px; }
+  .header h1 { font-size: 16px; font-weight: 600; flex: 1; }
+  .header .logout-btn {
+    background: rgba(255,255,255,0.2);
+    border: none;
+    color: #fff;
+    padding: 5px 12px;
+    border-radius: 14px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .header .logout-btn:active { background: rgba(255,255,255,0.35); }
+
+  /* ── 消息区域 ── */
+  .chat-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* ── 消息气泡 ── */
+  .msg {
+    display: flex;
+    flex-direction: column;
+    max-width: 82%;
+    animation: fadeIn 0.25s ease;
+  }
+  .msg.user { align-self: flex-end; align-items: flex-end; }
+  .msg.ai   { align-self: flex-start; align-items: flex-start; }
+  .msg.error { align-self: center; align-items: center; }
+
+  .msg .bubble {
+    padding: 10px 14px;
+    border-radius: 18px;
+    font-size: 15px;
+    line-height: 1.55;
+    word-break: break-word;
+    white-space: pre-wrap;
+    box-shadow: var(--shadow);
+  }
+  .msg.user .bubble {
+    background: var(--bubble-user);
+    border-bottom-right-radius: 6px;
+  }
+  .msg.ai .bubble {
+    background: var(--bubble-ai);
+    border-bottom-left-radius: 6px;
+  }
+  .msg.error .bubble {
+    background: #fff3f3;
+    color: #cc0000;
+    font-size: 14px;
+    text-align: center;
+  }
+  .msg .time {
+    font-size: 11px;
+    color: var(--text-secondary);
+    margin-top: 3px;
+    padding: 0 6px;
+  }
+
+  /* ── 快捷指令 ── */
+  .quick-actions {
+    display: flex;
+    gap: 8px;
+    padding: 4px 14px;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+  }
+  .quick-actions button {
+    padding: 8px 14px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: #fff;
+    font-size: 13px;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+    box-shadow: var(--shadow);
+  }
+  .quick-actions button:active {
+    background: var(--header-bg);
+    color: #fff;
+    border-color: var(--header-bg);
+  }
+
+  /* ── 输入区 ── */
+  .input-area {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: #f7f7f7;
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+    z-index: 10;
+  }
+  .input-area input {
+    flex: 1;
+    padding: 10px 16px;
+    border-radius: 24px;
+    border: 1px solid var(--border);
+    font-size: 15px;
+    outline: none;
+    background: #fff;
+    transition: border 0.15s;
+  }
+  .input-area input:focus { border-color: var(--header-bg); }
+  .send-btn {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    border: none;
+    background: var(--header-bg);
+    color: #fff;
+    font-size: 18px;
+    cursor: pointer;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.15s;
+  }
+  .send-btn:active { opacity: 0.8; }
+  .send-btn:disabled { opacity: 0.4; }
+
+  /* ── 加载动画 ── */
+  .typing-dots { display: flex; gap: 4px; padding: 4px 0; }
+  .typing-dots span {
+    width: 8px; height: 8px; border-radius: 50%; background: #bbb;
+    animation: bounce 1.2s infinite;
+  }
+  .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes bounce {
+    0%, 60%, 100% { transform: translateY(0); }
+    30% { transform: translateY(-8px); }
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── 登录/注册表单 ── */
+  .auth-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px 30px;
+    gap: 30px;
+  }
+  .auth-container .brand {
+    text-align: center;
+  }
+  .auth-container .brand .brand-icon {
+    font-size: 56px;
+    display: block;
+  }
+  .auth-container .brand h2 {
+    font-size: 20px;
+    color: var(--text-primary);
+    margin-top: 8px;
+  }
+  .auth-container .brand p {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-top: 4px;
+  }
+
+  .auth-form {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .auth-form input {
+    width: 100%;
+    padding: 12px 16px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    font-size: 16px;
+    outline: none;
+    background: #fff;
+    transition: border 0.15s;
+  }
+  .auth-form input:focus { border-color: var(--header-bg); }
+  .auth-form button {
+    padding: 12px;
+    border-radius: 12px;
+    border: none;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+  .auth-form button:active { opacity: 0.85; }
+  .auth-form .primary-btn {
+    background: var(--header-bg);
+    color: #fff;
+  }
+  .auth-form .switch-btn {
+    background: none;
+    color: var(--header-bg);
+    font-size: 14px;
+    font-weight: 400;
+  }
+  .auth-form .error-msg {
+    color: #cc0000;
+    font-size: 13px;
+    text-align: center;
+    min-height: 18px;
+  }
+</style>
+</head>
+<body>
+
+<div class="app-shell">
+
+  <!-- ── 标题栏 ── -->
+  <div class="header">
+    <span class="icon">🧠</span>
+    <h1 id="headerTitle">人类使用说明书</h1>
+    <button class="logout-btn" id="logoutBtn" style="display:none">退出</button>
+  </div>
+
+  <!-- ── 聊天区域（未登录隐藏） ── -->
+  <div class="chat-area" id="chatArea" style="display:none"></div>
+
+  <!-- ── 登录/注册区域 ── -->
+  <div class="auth-container" id="authContainer">
+    <div class="brand">
+      <span class="brand-icon">🧠</span>
+      <h2>人类使用说明书</h2>
+      <p>你的私人外脑 — 记录朋友的偏好与习惯</p>
+    </div>
+    <form class="auth-form" id="authForm">
+      <input type="text" id="usernameInput" placeholder="用户名（2-20个字符）" autocomplete="username" maxlength="20">
+      <input type="password" id="passwordInput" placeholder="密码（至少4位）" autocomplete="current-password" maxlength="64">
+      <div class="error-msg" id="authError"></div>
+      <button class="primary-btn" id="authSubmitBtn" type="submit">登 录</button>
+      <button class="switch-btn" id="authSwitchBtn" type="button">还没有账号？点击注册</button>
+    </form>
+  </div>
+
+  <!-- ── 快捷指令（未登录隐藏） ── -->
+  <div class="quick-actions" id="quickActions" style="display:none">
+    <button data-text="记录说明书：">📝 记录</button>
+    <button data-text="查询说明书：">🔍 查询</button>
+    <button data-text="说明书列表">📋 列表</button>
+  </div>
+
+  <!-- ── 输入区（未登录隐藏） ── -->
+  <div class="input-area" id="inputArea" style="display:none">
+    <input type="text" id="msgInput" placeholder="输入消息..." autocomplete="off" maxlength="2000">
+    <button class="send-btn" id="sendBtn">➤</button>
+  </div>
+
+</div>
+
+<script>
+// ──────────────────────────────────────────────────
+//  状态
+// ──────────────────────────────────────────────────
+const STORAGE_KEY = 'human_manual';
+let token = null;
+let username = '';
+let messages = [];
+let isAuthMode = 'login';  // 'login' | 'register'
+
+// ──────────────────────────────────────────────────
+//  DOM 引用
+// ──────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+const chatArea    = $('chatArea');
+const authContainer = $('authContainer');
+const authForm    = $('authForm');
+const authError   = $('authError');
+const authSubmit  = $('authSubmitBtn');
+const authSwitch  = $('authSwitchBtn');
+const usernameInp = $('usernameInput');
+const passwordInp = $('passwordInput');
+const msgInput    = $('msgInput');
+const sendBtn     = $('sendBtn');
+const logoutBtn   = $('logoutBtn');
+const quickActs   = $('quickActions');
+const inputArea   = $('inputArea');
+const headerTitle = $('headerTitle');
+
+// ──────────────────────────────────────────────────
+//  持久化
+// ──────────────────────────────────────────────────
+function saveState() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({ token, username, messages }));
+}
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const data = JSON.parse(raw);
+      token = data.token || null;
+      username = data.username || '';
+      messages = data.messages || [];
+      return true;
+    }
+  } catch {}
+  return false;
+}
+function clearState() {
+  token = null;
+  username = '';
+  messages = [];
+  localStorage.removeItem(STORAGE_KEY);
+}
+
+// ──────────────────────────────────────────────────
+//  UI 切换
+// ──────────────────────────────────────────────────
+function showAuth() {
+  authContainer.style.display = 'flex';
+  chatArea.style.display = 'none';
+  quickActs.style.display = 'none';
+  inputArea.style.display = 'none';
+  logoutBtn.style.display = 'none';
+  headerTitle.textContent = '人类使用说明书';
+}
+
+function showChat() {
+  authContainer.style.display = 'none';
+  chatArea.style.display = 'flex';
+  quickActs.style.display = 'flex';
+  inputArea.style.display = 'flex';
+  logoutBtn.style.display = 'block';
+  headerTitle.textContent = '🧠 ' + username;
+  renderAll();
+}
+
+function setAuthMode(mode) {
+  isAuthMode = mode;
+  if (mode === 'login') {
+    authSubmit.textContent = '登 录';
+    authSwitch.textContent = '还没有账号？点击注册';
+  } else {
+    authSubmit.textContent = '注 册';
+    authSwitch.textContent = '已有账号？点击登录';
+  }
+  authError.textContent = '';
+}
+
+// ──────────────────────────────────────────────────
+//  渲染消息
+// ──────────────────────────────────────────────────
+function renderMessage(msg) {
+  const div = document.createElement('div');
+  div.className = `msg ${msg.role}`;
+  div.innerHTML = `<div class="bubble">${escapeHtml(msg.content)}</div><div class="time">${msg.time || ''}</div>`;
+  chatArea.appendChild(div);
+  scrollChat();
+}
+
+function renderAll() {
+  chatArea.innerHTML = '';
+  messages.forEach(renderMessage);
+  scrollChat();
+}
+
+function addMessage(role, content) {
+  const now = new Date();
+  const time = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+  messages.push({ role, content, time });
+  renderMessage(messages[messages.length - 1]);
+  saveState();
+}
+
+function escapeHtml(text) {
+  const d = document.createElement('div');
+  d.textContent = text;
+  return d.innerHTML;
+}
+
+function scrollChat() {
+  requestAnimationFrame(() => { chatArea.scrollTop = chatArea.scrollHeight; });
+}
+
+// ──────────────────────────────────────────────────
+//  加载指示器
+// ──────────────────────────────────────────────────
+let loadingEl = null;
+function showLoading() {
+  hideLoading();
+  const div = document.createElement('div');
+  div.className = 'msg ai';
+  div.id = 'loadingMsg';
+  div.innerHTML = '<div class="bubble"><div class="typing-dots"><span></span><span></span><span></span></div></div>';
+  chatArea.appendChild(div);
+  scrollChat();
+  loadingEl = div;
+}
+function hideLoading() {
+  if (loadingEl) { loadingEl.remove(); loadingEl = null; }
+}
+
+// ──────────────────────────────────────────────────
+//  认证 API
+// ──────────────────────────────────────────────────
+async function apiAuth(endpoint, username, password) {
+  const resp = await fetch(endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, password }),
+  });
+  const data = await resp.json();
+  if (!resp.ok) throw new Error(data.detail || '请求失败');
+  return data;
+}
+
+// ──────────────────────────────────────────────────
+//  聊天 API
+// ──────────────────────────────────────────────────
+async function apiChat(message) {
+  const resp = await fetch('/api/chat', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    },
+    body: JSON.stringify({ message }),
+  });
+  if (resp.status === 401) {
+    // token 过期
+    clearState();
+    showAuth();
+    throw new Error('登录已过期，请重新登录');
+  }
+  const data = await resp.json();
+  if (!resp.ok) throw new Error(data.detail || '请求失败');
+  return data.reply;
+}
+
+// ──────────────────────────────────────────────────
+//  发送消息
+// ──────────────────────────────────────────────────
+async function sendMessage() {
+  const text = msgInput.value.trim();
+  if (!text) return;
+
+  addMessage('user', text);
+  msgInput.value = '';
+  showLoading();
+
+  try {
+    const reply = await apiChat(text);
+    hideLoading();
+    addMessage('ai', reply);
+  } catch (err) {
+    hideLoading();
+    addMessage('error', '❌ ' + err.message);
+  }
+}
+
+// ──────────────────────────────────────────────────
+//  事件绑定
+// ──────────────────────────────────────────────────
+
+// 登录/注册切换
+authSwitch.addEventListener('click', () => setAuthMode(isAuthMode === 'login' ? 'register' : 'login'));
+
+// 提交登录/注册
+authForm.addEventListener('submit', async e => {
+  e.preventDefault();
+  const u = usernameInp.value.trim();
+  const p = passwordInp.value.trim();
+
+  if (!u || u.length < 2) { authError.textContent = '用户名至少2个字符'; return; }
+  if (!p || p.length < 4) { authError.textContent = '密码至少4位'; return; }
+
+  authSubmit.disabled = true;
+  authError.textContent = '';
+
+  try {
+    const endpoint = isAuthMode === 'login' ? '/api/login' : '/api/register';
+    const data = await apiAuth(endpoint, u, p);
+    token = data.token;
+    username = data.username;
+    saveState();
+    // 清空消息，显示欢迎
+    messages = [];
+    addMessage('ai', `👋 你好，${username}！\n\n我是你的私人外脑，帮记录朋友的偏好和习惯。\n\n📝 试试说「记录说明书：张三，不吃香菜」\n🔍 或者「查询说明书：张三」`);
+    showChat();
+  } catch (err) {
+    authError.textContent = err.message;
+  } finally {
+    authSubmit.disabled = false;
+  }
+});
+
+// 退出
+logoutBtn.addEventListener('click', () => {
+  clearState();
+  showAuth();
+  setAuthMode('login');
+  usernameInp.value = '';
+  passwordInp.value = '';
+});
+
+// 发送消息
+sendBtn.addEventListener('click', sendMessage);
+msgInput.addEventListener('keydown', e => { if (e.key === 'Enter') sendMessage(); });
+
+// 快捷指令
+quickActs.addEventListener('click', e => {
+  const btn = e.target.closest('button');
+  if (!btn) return;
+  msgInput.value = btn.dataset.text;
+  msgInput.focus();
+});
+
+// ──────────────────────────────────────────────────
+//  初始化
+// ──────────────────────────────────────────────────
+loadState();
+if (token) {
+  // 验证 token 是否还有效
+  fetch('/api/me', { headers: { 'Authorization': `Bearer ${token}` } })
+    .then(r => {
+      if (r.ok) {
+        if (messages.length === 0) {
+          addMessage('ai', `👋 你好，${username}！\n\n欢迎回来～继续记录吧。`);
+        }
+        showChat();
+      } else {
+        clearState();
+        showAuth();
+      }
+    })
+    .catch(() => { showAuth(); });
+} else {
+  showAuth();
+  setAuthMode('login');
+}
+</script>
+</body>
+</html>

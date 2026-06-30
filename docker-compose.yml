@@ -1,0 +1,11 @@
+services:
+  gewechat:
+    image: registry.cn-hangzhou.aliyuncs.com/gewe/gewe:latest
+    container_name: gewe
+    privileged: true
+    ports:
+      - "2531:2531"
+      - "2532:2532"
+    volumes:
+      - ./gewe_data:/root/temp
+    restart: unless-stopped

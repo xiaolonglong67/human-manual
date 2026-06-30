@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.egg
+
+# 数据库文件
+*.db
+*.sqlite3
+
+# 环境变量
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+
+# Docker
+gewe_data/
+
+# 操作系统
+.DS_Store
+Thumbs.db
