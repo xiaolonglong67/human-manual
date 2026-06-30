@@ -12,7 +12,7 @@ from contextlib import asynccontextmanager
 
 import aiosqlite
 
-DB_PATH = os.path.join(os.path.dirname(__file__), "..", "human_manual.db")
+DB_PATH = os.environ.get("DB_PATH", os.path.join(os.path.dirname(__file__), "..", "human_manual.db"))
 DB_PATH = os.path.abspath(DB_PATH)
 
 
