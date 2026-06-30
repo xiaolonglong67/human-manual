@@ -57,7 +57,10 @@ async def call_deepseek(user_text: str) -> dict:
             raise ValueError(f"DeepSeek 服务器错误 (HTTP {resp.status_code}): {resp.text[:300]}")
         if resp.status_code >= 400:
             raise ValueError(f"DeepSeek API 认证失败或请求错误 (HTTP {resp.status_code})，请检查 DEEPSEEK_API_KEY 是否正确且余额充足")
-        data = resp.json()
+        try:
+            data = resp.json()
+        except json.JSONDecodeError:
+            raise ValueError(f"DeepSeek 返回非 JSON (HTTP {resp.status_code}): {resp.text[:300]}")
         if "choices" not in data:
             raise ValueError(f"DeepSeek 返回异常: {json.dumps(data, ensure_ascii=False)[:300]}")
         content = data["choices"][0]["message"]["content"]
