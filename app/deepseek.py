@@ -52,15 +52,22 @@ async def call_deepseek(user_text: str) -> dict:
 
     async with httpx.AsyncClient(timeout=30.0) as client:
         resp = await client.post(url, headers=headers, json=payload)
-        # 记录状态码和响应体前段，方便排查
+        # — 状态码判断 —
         if resp.status_code >= 500:
             raise ValueError(f"DeepSeek 服务器错误 (HTTP {resp.status_code}): {resp.text[:300]}")
         if resp.status_code >= 400:
-            raise ValueError(f"DeepSeek API 认证失败或请求错误 (HTTP {resp.status_code})，请检查 DEEPSEEK_API_KEY 是否正确且余额充足")
+            raise ValueError(
+                f"DeepSeek API 认证失败或请求错误 (HTTP {resp.status_code})，请检查 DEEPSEEK_API_KEY 是否正确且余额充足"
+            )
+
+        # — 解析 JSON 响应体（容错 HTML 错误页面） —
         try:
             data = resp.json()
         except json.JSONDecodeError:
-            raise ValueError(f"DeepSeek 返回非 JSON (HTTP {resp.status_code}): {resp.text[:300]}")
+            raise ValueError(
+                f"DeepSeek 返回非 JSON (HTTP {resp.status_code}): {resp.text[:300]}"
+            )
+
         if "choices" not in data:
             raise ValueError(f"DeepSeek 返回异常: {json.dumps(data, ensure_ascii=False)[:300]}")
         content = data["choices"][0]["message"]["content"]
