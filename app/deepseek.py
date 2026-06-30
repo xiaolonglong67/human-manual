@@ -10,6 +10,10 @@ import httpx
 DEEPSEEK_API_KEY = os.environ.get("DEEPSEEK_API_KEY", "").strip()
 DEEPSEEK_API_BASE = os.environ.get("DEEPSEEK_API_BASE", "https://api.deepseek.com").strip()
 
+# 重试配置
+MAX_RETRIES = 2
+RETRY_DELAY_SEC = 1.0
+
 SYSTEM_PROMPT = """你是一个信息提取助手。用户会发来一段关于某个人的描述，请从中提取结构化信息。
 
 严格返回 JSON（不要 markdown 代码块，只返回纯 JSON），格式如下：
@@ -34,7 +38,9 @@ SYSTEM_PROMPT = """你是一个信息提取助手。用户会发来一段关于�
 
 
 async def call_deepseek(user_text: str) -> dict:
-    """调用 DeepSeek 将非结构化文本转为结构化 JSON"""
+    """调用 DeepSeek 将非结构化文本转为结构化 JSON，带自动重试"""
+    import asyncio
+
     url = f"{DEEPSEEK_API_BASE.rstrip('/')}/v1/chat/completions"
     headers = {
         "Authorization": f"Bearer {DEEPSEEK_API_KEY}",
@@ -50,39 +56,54 @@ async def call_deepseek(user_text: str) -> dict:
         "max_tokens": 1024,
     }
 
-    async with httpx.AsyncClient(timeout=30.0) as client:
-        resp = await client.post(url, headers=headers, json=payload)
-        # — 状态码判断 —
-        if resp.status_code >= 500:
-            preview = resp.text[:300]
-            raise ValueError(f"DeepSeek 服务器错误 (HTTP {resp.status_code}): {preview}")
-        if resp.status_code >= 400:
-            preview = resp.text[:300]
-            raise ValueError(
-                f"DeepSeek API 请求错误 (HTTP {resp.status_code}): {preview}"
-            )
-
-        # — 解析 JSON 响应体（容错 HTML 错误页面） —
+    last_error = None
+    for attempt in range(1 + MAX_RETRIES):
         try:
-            data = resp.json()
-        except json.JSONDecodeError:
-            preview = resp.text[:300]
-            raise ValueError(
-                f"DeepSeek 返回非 JSON (HTTP {resp.status_code}): {preview}"
-            )
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                resp = await client.post(url, headers=headers, json=payload)
 
-        if "choices" not in data:
-            raise ValueError(f"DeepSeek 返回异常: {json.dumps(data, ensure_ascii=False)[:300]}")
-        content = data["choices"][0]["message"]["content"]
+                if resp.status_code >= 500:
+                    last_error = ValueError(f"DeepSeek 服务器错误 (HTTP {resp.status_code}): {resp.text[:300]}")
+                    if attempt < MAX_RETRIES:
+                        await asyncio.sleep(RETRY_DELAY_SEC)
+                        continue
+                    raise last_error
 
-    # 清理可能的 markdown 代码块标记
-    content = content.strip()
-    if content.startswith("```"):
-        lines = content.split("\n")
-        content = "\n".join(lines[1:]) if len(lines) > 1 else content
-        if content.endswith("```"):
-            content = content[:-3]
-    try:
-        return json.loads(content)
-    except json.JSONDecodeError:
-        raise ValueError(f"DeepSeek 返回非 JSON: {content[:500]}")
+                if resp.status_code >= 400:
+                    raise ValueError(
+                        f"DeepSeek API 请求错误 (HTTP {resp.status_code}): {resp.text[:300]}"
+                    )
+
+                try:
+                    data = resp.json()
+                except json.JSONDecodeError:
+                    raise ValueError(
+                        f"DeepSeek 返回非 JSON (HTTP {resp.status_code}): {resp.text[:300]}"
+                    )
+
+                if "choices" not in data:
+                    raise ValueError(f"DeepSeek 返回异常: {json.dumps(data, ensure_ascii=False)[:300]}")
+                content = data["choices"][0]["message"]["content"]
+
+            # — 清理可能的 markdown 代码块标记 —
+            content = content.strip()
+            if content.startswith("```"):
+                lines = content.split("\n")
+                content = "\n".join(lines[1:]) if len(lines) > 1 else content
+                if content.endswith("```"):
+                    content = content[:-3]
+
+            try:
+                return json.loads(content)
+            except json.JSONDecodeError:
+                raise ValueError(f"DeepSeek 返回非 JSON: {content[:500]}")
+
+        except (ValueError, json.JSONDecodeError) as e:
+            # 非 5xx 错误不重试
+            if "HTTP 5" not in str(e) and attempt < MAX_RETRIES:
+                last_error = e
+                await asyncio.sleep(RETRY_DELAY_SEC)
+                continue
+            raise
+
+    raise last_error or RuntimeError("DeepSeek 调用失败")
